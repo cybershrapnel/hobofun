@@ -1,7 +1,3 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 #include "signverifymessagedialog.h"
 #include "ui_signverifymessagedialog.h"
 
@@ -13,14 +9,16 @@
 #include "optionsmodel.h"
 #include "walletmodel.h"
 #include "wallet.h"
+#include "dialogwindowflags.h"
 
 #include <QClipboard>
+#include <QDebug>
 
 #include <string>
 #include <vector>
 
 SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent, DIALOGWINDOWHINTS),
     ui(new Ui::SignVerifyMessageDialog),
     model(0)
 {
@@ -28,11 +26,11 @@ SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
 
 #if (QT_VERSION >= 0x040700)
     /* Do not move this to the XML file, Qt before 4.7 will choke on it */
-    ui->addressIn_SM->setPlaceholderText(tr("Enter a Funcoin address (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)"));
+    ui->addressIn_SM->setPlaceholderText(tr("Enter a valid HoboNickels address"));
     ui->signatureOut_SM->setPlaceholderText(tr("Click \"Sign Message\" to generate signature"));
 
-    ui->addressIn_VM->setPlaceholderText(tr("Enter a Funcoin address (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)"));
-    ui->signatureIn_VM->setPlaceholderText(tr("Enter Funcoin signature"));
+    ui->addressIn_VM->setPlaceholderText(tr("Enter a valid HoboNickels address"));
+    ui->signatureIn_VM->setPlaceholderText(tr("Enter HoboNickels signature"));
 #endif
 
     GUIUtil::setupAddressWidget(ui->addressIn_SM, this);
@@ -74,7 +72,6 @@ void SignVerifyMessageDialog::setAddress_VM(const QString &address)
 void SignVerifyMessageDialog::showTab_SM(bool fShow)
 {
     ui->tabWidget->setCurrentIndex(0);
-
     if (fShow)
         this->show();
 }
@@ -135,7 +132,27 @@ void SignVerifyMessageDialog::on_signMessageButton_SM_clicked()
     }
 
     CKey key;
-    if (!pwalletMain->GetKey(keyID, key))
+    CKey tkey;
+    bool fwalletFound=false;
+    BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+    {
+
+      pwalletMain = pWalletManager->GetWallet(item.first.c_str()).get();
+
+      if (!pwalletMain->GetKey(keyID, tkey))
+          qDebug() << "Address Not Found For " + QString(pwalletMain->strWalletFile.c_str());
+      else
+      {
+          if (!pwalletMain->GetKey(keyID, key))
+          {
+              ui->statusLabel_SM->setStyleSheet("QLabel { color: red; }");
+              ui->statusLabel_SM->setText(tr("Private key for the entered address is not available."));
+              return;
+          }
+          fwalletFound=true;
+      }
+    }
+    if (!fwalletFound)
     {
         ui->statusLabel_SM->setStyleSheet("QLabel { color: red; }");
         ui->statusLabel_SM->setText(tr("Private key for the entered address is not available."));
@@ -222,8 +239,8 @@ void SignVerifyMessageDialog::on_verifyMessageButton_VM_clicked()
     ss << strMessageMagic;
     ss << ui->messageIn_VM->document()->toPlainText().toStdString();
 
-    CPubKey pubkey;
-    if (!pubkey.RecoverCompact(Hash(ss.begin(), ss.end()), vchSig))
+    CKey key;
+    if (!key.SetCompactSignature(Hash(ss.begin(), ss.end()), vchSig))
     {
         ui->signatureIn_VM->setValid(false);
         ui->statusLabel_VM->setStyleSheet("QLabel { color: red; }");
@@ -231,7 +248,7 @@ void SignVerifyMessageDialog::on_verifyMessageButton_VM_clicked()
         return;
     }
 
-    if (!(CBitcoinAddress(pubkey.GetID()) == addr))
+    if (!(CBitcoinAddress(key.GetPubKey().GetID()) == addr))
     {
         ui->statusLabel_VM->setStyleSheet("QLabel { color: red; }");
         ui->statusLabel_VM->setText(QString("<nobr>") + tr("Message verification failed.") + QString("</nobr>"));

@@ -1,7 +1,3 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 #include "notificator.h"
 
 #include <QMetaType>
@@ -25,8 +21,10 @@
 #include "macnotificationhandler.h"
 #endif
 
+#ifdef USE_DBUS
 // https://wiki.ubuntu.com/NotificationDevelopmentGuidelines recommends at least 128
 const int FREEDESKTOP_NOTIFICATION_ICON_SIZE = 128;
+#endif
 
 Notificator::Notificator(const QString &programName, QSystemTrayIcon *trayicon, QWidget *parent):
     QObject(parent),
@@ -71,6 +69,7 @@ Notificator::Notificator(const QString &programName, QSystemTrayIcon *trayicon, 
             CFRelease(bundle);
         }
     }
+
 #endif
 }
 
@@ -286,7 +285,6 @@ void Notificator::notifyMacUserNotificationCenter(Class cls, const QString &titl
     // icon is not supported by the user notification center yet. OSX will use the app icon.
     MacNotificationHandler::instance()->showNotification(title, text);
 }
-
 #endif
 
 void Notificator::notify(Class cls, const QString &title, const QString &text, const QIcon &icon, int millisTimeout)

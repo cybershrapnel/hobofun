@@ -1,7 +1,3 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 #include "optionsdialog.h"
 #include "ui_optionsdialog.h"
 
@@ -9,6 +5,7 @@
 #include "monitoreddatamapper.h"
 #include "netbase.h"
 #include "optionsmodel.h"
+#include "dialogwindowflags.h"
 
 #include <QDir>
 #include <QIntValidator>
@@ -16,7 +13,7 @@
 #include <QMessageBox>
 
 OptionsDialog::OptionsDialog(QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent,DIALOGWINDOWHINTS),
     ui(new Ui::OptionsDialog),
     model(0),
     mapper(0),
@@ -35,10 +32,13 @@ OptionsDialog::OptionsDialog(QWidget *parent) :
     ui->proxyPort->setEnabled(false);
     ui->proxyPort->setValidator(new QIntValidator(1, 65535, this));
 
+
     ui->socksVersion->setEnabled(false);
     ui->socksVersion->addItem("5", 5);
     ui->socksVersion->addItem("4", 4);
     ui->socksVersion->setCurrentIndex(0);
+
+
 
     connect(ui->connectSocks, SIGNAL(toggled(bool)), ui->proxyIp, SLOT(setEnabled(bool)));
     connect(ui->connectSocks, SIGNAL(toggled(bool)), ui->proxyPort, SLOT(setEnabled(bool)));
@@ -49,8 +49,7 @@ OptionsDialog::OptionsDialog(QWidget *parent) :
 
     /* Window elements init */
 #ifdef Q_OS_MAC
-    /* remove Window tab on Mac */
-    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabWindow));
+    ui->tabWindow->setVisible(false);
 #endif
 
     /* Display elements init */
@@ -116,7 +115,7 @@ void OptionsDialog::setModel(OptionsModel *model)
         mapper->toFirst();
     }
 
-    /* update the display unit, to not use the default ("BTC") */
+    /* update the display unit, to not use the default ("HBN") */
     updateDisplayUnit();
 
     /* warn only when language selection changes by user action (placed here so init via mapper doesn't trigger this) */
@@ -129,11 +128,9 @@ void OptionsDialog::setModel(OptionsModel *model)
 void OptionsDialog::setMapper()
 {
     /* Main */
-    mapper->addMapping(ui->bitcoinAtStartup, OptionsModel::StartAtStartup);
-
-    /* Wallet */
     mapper->addMapping(ui->transactionFee, OptionsModel::Fee);
-    mapper->addMapping(ui->spendZeroConfChange, OptionsModel::SpendZeroConfChange);
+    mapper->addMapping(ui->bitcoinAtStartup, OptionsModel::StartAtStartup);
+    mapper->addMapping(ui->detachDatabases, OptionsModel::DetachDatabases);
 
     /* Network */
     mapper->addMapping(ui->mapPortUpnp, OptionsModel::MapPortUPnP);
@@ -211,6 +208,7 @@ void OptionsDialog::on_resetButton_clicked()
     }
 }
 
+
 void OptionsDialog::on_okButton_clicked()
 {
     mapper->submit();
@@ -232,7 +230,7 @@ void OptionsDialog::showRestartWarning_Proxy()
 {
     if(!fRestartWarningDisplayed_Proxy)
     {
-        QMessageBox::warning(this, tr("Warning"), tr("This setting will take effect after restarting Funcoin."), QMessageBox::Ok);
+        QMessageBox::warning(this, tr("Warning"), tr("This setting will take effect after restarting HoboNickels."), QMessageBox::Ok);
         fRestartWarningDisplayed_Proxy = true;
     }
 }
@@ -241,7 +239,7 @@ void OptionsDialog::showRestartWarning_Lang()
 {
     if(!fRestartWarningDisplayed_Lang)
     {
-        QMessageBox::warning(this, tr("Warning"), tr("This setting will take effect after restarting Funcoin."), QMessageBox::Ok);
+        QMessageBox::warning(this, tr("Warning"), tr("This setting will take effect after restarting HoboNickels."), QMessageBox::Ok);
         fRestartWarningDisplayed_Lang = true;
     }
 }

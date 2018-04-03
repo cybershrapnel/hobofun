@@ -1,16 +1,14 @@
-// Copyright (c) 2011-2013 The Bitcoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 #ifndef CLIENTMODEL_H
 #define CLIENTMODEL_H
 
 #include <QObject>
 
 class OptionsModel;
+class PeerTableModel;
 class AddressTableModel;
 class TransactionTableModel;
 class CWallet;
+
 
 QT_BEGIN_NAMESPACE
 class QDateTime;
@@ -19,9 +17,9 @@ QT_END_NAMESPACE
 
 enum BlockSource {
     BLOCK_SOURCE_NONE,
-    BLOCK_SOURCE_REINDEX,
+    BLOCK_SOURCE_NETWORK,
     BLOCK_SOURCE_DISK,
-    BLOCK_SOURCE_NETWORK
+    BLOCK_SOURCE_REINDEX
 };
 
 /** Model for Bitcoin network client. */
@@ -34,13 +32,25 @@ public:
     ~ClientModel();
 
     OptionsModel *getOptionsModel();
+    PeerTableModel *getPeerTableModel();
 
     int getNumConnections() const;
     int getNumBlocks() const;
+    int getProtocolVersion() const;
+    qint64 getMoneySupply();
+    double getDifficulty(bool fProofofStake=false);
+    double getPoWMHashPS();
+    double getProofOfStakeReward();
+    int getLastPoSBlock();
     int getNumBlocksAtStartup();
+    double getPosKernalPS();
+    int getStakeTargetSpacing();
 
-    double getVerificationProgress() const;
-    QDateTime getLastBlockDate() const;
+    quint64 getTotalBytesRecv() const;
+    quint64 getTotalBytesSent() const;
+
+
+    QDateTime getLastBlockDate(bool fProofofStake=false) const;
 
     //! Return true if client connected to testnet
     bool isTestNet() const;
@@ -61,11 +71,10 @@ public:
 
 private:
     OptionsModel *optionsModel;
+    PeerTableModel *peerTableModel;
 
     int cachedNumBlocks;
     int cachedNumBlocksOfPeers;
-	bool cachedReindexing;
-	bool cachedImporting;
 
     int numBlocksAtStartup;
 
@@ -73,11 +82,13 @@ private:
 
     void subscribeToCoreSignals();
     void unsubscribeFromCoreSignals();
-
 signals:
     void numConnectionsChanged(int count);
     void numBlocksChanged(int count, int countOfPeers);
+    void bytesChanged(quint64 totalBytesIn, quint64 totalBytesOut);
     void alertsChanged(const QString &warnings);
+    void walletAdded(const QString &name);
+    void walletRemoved(const QString &name);
 
     //! Asynchronous message notification
     void message(const QString &title, const QString &message, unsigned int style);
@@ -86,6 +97,8 @@ public slots:
     void updateTimer();
     void updateNumConnections(int numConnections);
     void updateAlert(const QString &hash, int status);
+    void updateWalletAdded(const QString &name);
+    void updateWalletRemoved(const QString &name);
 };
 
 #endif // CLIENTMODEL_H
