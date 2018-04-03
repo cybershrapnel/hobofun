@@ -20,8 +20,8 @@ script: |
   # Input Integrity Check
 
   mkdir -p "$INSTALLPREFIX"
-  tar xjf boost_1_55_0.tar.bz2
-  cd boost_1_55_0
+  tar xjf boost_1_47_0.tar.bz2
+  cd boost_1_47_0
   GCCVERSION=$($HOST-g++ -E -dM $(mktemp --suffix=.h) | grep __VERSION__ | cut -d ' ' -f 3 | cut -d '"' -f 2)
   echo "using gcc : $GCCVERSION : $HOST-g++
         :
