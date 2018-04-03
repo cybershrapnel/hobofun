@@ -7,12 +7,13 @@
 
 #include "wallet.h"
 
+extern CWalletManager* pWalletManager;
+// TODO: get rid of pwalletMain
 extern CWallet* pwalletMain;
 
 void StartShutdown();
-bool ShutdownRequested();
-void Shutdown();
-bool AppInit2(boost::thread_group& threadGroup);
+void Shutdown(void* parg);
+bool AppInit2();
 std::string HelpMessage();
 
 #endif

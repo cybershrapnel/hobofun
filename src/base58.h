@@ -272,9 +272,9 @@ class CBitcoinAddress : public CBase58Data
 public:
     enum
     {
-        PUBKEY_ADDRESS = 35, // Funcoin addresses start with 
-        SCRIPT_ADDRESS = 5,
-        PUBKEY_ADDRESS_TEST = 95,
+        PUBKEY_ADDRESS = 34,  // HoboNickels: address begin with 'H'
+        SCRIPT_ADDRESS = 8, 
+        PUBKEY_ADDRESS_TEST = 111,
         SCRIPT_ADDRESS_TEST = 196,
     };
 
@@ -398,25 +398,21 @@ bool inline CBitcoinAddressVisitor::operator()(const CNoDestination &id) const {
 class CBitcoinSecret : public CBase58Data
 {
 public:
-    enum
+    void SetSecret(const CSecret& vchSecret, bool fCompressed)
     {
-        PRIVKEY_ADDRESS = CBitcoinAddress::PUBKEY_ADDRESS + 128,
-        PRIVKEY_ADDRESS_TEST = CBitcoinAddress::PUBKEY_ADDRESS_TEST + 128,
-    };
-
-    void SetKey(const CKey& vchSecret)
-    {
-        assert(vchSecret.IsValid());
-        SetData(fTestNet ? PRIVKEY_ADDRESS_TEST : PRIVKEY_ADDRESS, vchSecret.begin(), vchSecret.size());
-        if (vchSecret.IsCompressed())
+        assert(vchSecret.size() == 32);
+        SetData(128 + (fTestNet ? CBitcoinAddress::PUBKEY_ADDRESS_TEST : CBitcoinAddress::PUBKEY_ADDRESS), &vchSecret[0], vchSecret.size());
+        if (fCompressed)
             vchData.push_back(1);
     }
 
-    CKey GetKey()
+    CSecret GetSecret(bool &fCompressedOut)
     {
-        CKey ret;
-        ret.Set(&vchData[0], &vchData[32], vchData.size() > 32 && vchData[32] == 1);
-        return ret;
+        CSecret vchSecret;
+        vchSecret.resize(32);
+        memcpy(&vchSecret[0], &vchData[0], 32);
+        fCompressedOut = vchData.size() == 33;
+        return vchSecret;
     }
 
     bool IsValid() const
@@ -424,10 +420,10 @@ public:
         bool fExpectTestNet = false;
         switch(nVersion)
         {
-            case PRIVKEY_ADDRESS:
+            case (128 + CBitcoinAddress::PUBKEY_ADDRESS):
                 break;
 
-            case PRIVKEY_ADDRESS_TEST:
+            case (128 + CBitcoinAddress::PUBKEY_ADDRESS_TEST):
                 fExpectTestNet = true;
                 break;
 
@@ -447,9 +443,9 @@ public:
         return SetString(strSecret.c_str());
     }
 
-    CBitcoinSecret(const CKey& vchSecret)
+    CBitcoinSecret(const CSecret& vchSecret, bool fCompressed)
     {
-        SetKey(vchSecret);
+        SetSecret(vchSecret, fCompressed);
     }
 
     CBitcoinSecret()
@@ -457,4 +453,4 @@ public:
     }
 };
 
-#endif // BITCOIN_BASE58_H
+#endif

@@ -2,13 +2,16 @@
 // Copyright (c) 2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef BITCOIN_UI_INTERFACE_H
 #define BITCOIN_UI_INTERFACE_H
 
-#include <string>
-#include "util.h" // for int64
-#include <boost/signals2/signal.hpp>
 #include <boost/signals2/last_value.hpp>
+#include <boost/signals2/signal.hpp>
+
+#include <string>
+
+#include <stdint.h>
 
 class CBasicKeyStore;
 class CWallet;
@@ -29,16 +32,16 @@ public:
     /** Flags for CClientUIInterface::ThreadSafeMessageBox */
     enum MessageBoxFlags
     {
-        ICON_INFORMATION    = 0,
-        ICON_WARNING        = (1U << 0),
-        ICON_ERROR          = (1U << 1),
-        /**
-         * Mask of all available icons in CClientUIInterface::MessageBoxFlags
-         * This needs to be updated, when icons are changed there!
-         */
-        ICON_MASK = (ICON_INFORMATION | ICON_WARNING | ICON_ERROR),
+      ICON_INFORMATION    = 0,
+      ICON_WARNING        = (1U << 0),
+      ICON_ERROR          = (1U << 1),
+      /**
+       * Mask of all available icons in CClientUIInterface::MessageBoxFlags
+       * This needs to be updated, when icons are changed there!
+       */
+      ICON_MASK = (ICON_INFORMATION | ICON_WARNING | ICON_ERROR),
 
-        /** These values are taken from qmessagebox.h "enum StandardButton" to be directly usable */
+      /** These values are taken from qmessagebox.h "enum StandardButton" to be directly usable */
         BTN_OK      = 0x00000400U, // QMessageBox::Ok
         BTN_YES     = 0x00004000U, // QMessageBox::Yes
         BTN_NO      = 0x00010000U, // QMessageBox::No
@@ -51,12 +54,13 @@ public:
         BTN_HELP    = 0x01000000U, // QMessageBox::Help
         BTN_APPLY   = 0x02000000U, // QMessageBox::Apply
         BTN_RESET   = 0x04000000U, // QMessageBox::Reset
+
         /**
          * Mask of all available buttons in CClientUIInterface::MessageBoxFlags
          * This needs to be updated, when buttons are changed there!
-         */
+        */
         BTN_MASK = (BTN_OK | BTN_YES | BTN_NO | BTN_ABORT | BTN_RETRY | BTN_IGNORE |
-                    BTN_CLOSE | BTN_CANCEL | BTN_DISCARD | BTN_HELP | BTN_APPLY | BTN_RESET),
+                  BTN_CLOSE | BTN_CANCEL | BTN_DISCARD | BTN_HELP | BTN_APPLY | BTN_RESET),
 
         /** Force blocking, modal message box dialog (not just OS notification) */
         MODAL               = 0x10000000U,
@@ -68,16 +72,19 @@ public:
     };
 
     /** Show message box. */
-    boost::signals2::signal<bool (const std::string& message, const std::string& caption, unsigned int style), boost::signals2::last_value<bool> > ThreadSafeMessageBox;
+    boost::signals2::signal<void (const std::string& message, const std::string& caption, int style)> ThreadSafeMessageBox;
 
     /** Ask the user whether they want to pay a fee or not. */
-    boost::signals2::signal<bool (int64 nFeeRequired), boost::signals2::last_value<bool> > ThreadSafeAskFee;
+    boost::signals2::signal<bool (int64_t nFeeRequired, const std::string& strCaption), boost::signals2::last_value<bool> > ThreadSafeAskFee;
 
     /** Handle a URL passed at the command line. */
     boost::signals2::signal<void (const std::string& strURI)> ThreadSafeHandleURI;
 
     /** Progress message during initialization. */
     boost::signals2::signal<void (const std::string &message)> InitMessage;
+
+    /** Initiate client shutdown. */
+    boost::signals2::signal<void ()> QueueShutdown;
 
     /** Translate a message to the native language of the user. */
     boost::signals2::signal<std::string (const char* psz)> Translate;
@@ -87,6 +94,13 @@ public:
 
     /** Number of network connections changed. */
     boost::signals2::signal<void (int newNumConnections)> NotifyNumConnectionsChanged;
+
+    /** A Wallet has been added */
+    boost::signals2::signal<void (const std::string &name)> NotifyWalletAdded;
+
+    /** A Wallet has been removed */
+    boost::signals2::signal<void (const std::string &name)> NotifyWalletRemoved;
+
 
     /**
      * New, updated or cancelled alert.

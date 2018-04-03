@@ -2,14 +2,56 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef BITCOIN_SYNC_H
 #define BITCOIN_SYNC_H
 
+#include "threadsafety.h"
+
+#include <boost/thread/condition_variable.hpp>
+#include <boost/thread/locks.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>
-#include <boost/thread/locks.hpp>
-#include <boost/thread/condition_variable.hpp>
-#include "threadsafety.h"
+
+////////////////////////////////////////////////
+// //
+// THE SIMPLE DEFINITON, EXCLUDING DEBUG CODE //
+// //
+////////////////////////////////////////////////
+
+
+/*
+
+
+CCriticalSection mutex;
+    boost::recursive_mutex mutex;
+
+LOCK(mutex);
+    boost::unique_lock<boost::recursive_mutex> criticalblock(mutex);
+
+LOCK2(mutex1, mutex2);
+    boost::unique_lock<boost::recursive_mutex> criticalblock1(mutex1);
+    boost::unique_lock<boost::recursive_mutex> criticalblock2(mutex2);
+
+TRY_LOCK(mutex, name);
+    boost::unique_lock<boost::recursive_mutex> name(mutex, boost::try_to_lock_t);
+
+ENTER_CRITICAL_SECTION(mutex); // no RAII
+    mutex.lock();
+
+LEAVE_CRITICAL_SECTION(mutex); // no RAII
+    mutex.unlock();
+
+
+
+*/
+
+
+///////////////////////////////
+// //
+// THE ACTUAL IMPLEMENTATION //
+// //
+///////////////////////////////
 
 // Template mixin that adds -Wthread-safety locking annotations to a
 // subset of the mutex API.
@@ -19,19 +61,20 @@ class LOCKABLE AnnotatedMixin : public PARENT
 public:
     void lock() EXCLUSIVE_LOCK_FUNCTION()
     {
-      PARENT::lock();
+        PARENT::lock();
     }
-
     void unlock() UNLOCK_FUNCTION()
     {
-      PARENT::unlock();
+        PARENT::unlock();
     }
-
     bool try_lock() EXCLUSIVE_TRYLOCK_FUNCTION(true)
     {
-      return PARENT::try_lock();
+        return PARENT::try_lock();
     }
 };
+
+
+
 
 /** Wrapped boost mutex: supports recursive locking, but no waiting  */
 // TODO: We should move away from using the recursive lock by default.
@@ -43,10 +86,14 @@ typedef AnnotatedMixin<boost::mutex> CWaitableCriticalSection;
 #ifdef DEBUG_LOCKORDER
 void EnterCritical(const char* pszName, const char* pszFile, int nLine, void* cs, bool fTry = false);
 void LeaveCritical();
+std::string LocksHeld();
+void AssertLockHeldInternal(const char* pszName, const char* pszFile, int nLine, void *cs);
 #else
 void static inline EnterCritical(const char* pszName, const char* pszFile, int nLine, void* cs, bool fTry = false) {}
 void static inline LeaveCritical() {}
+void static inline AssertLockHeldInternal(const char* pszName, const char* pszFile, int nLine, void *cs) {}
 #endif
+#define AssertLockHeld(cs) AssertLockHeldInternal(#cs, __FILE__, __LINE__, &cs)
 
 #ifdef DEBUG_LOCKCONTENTION
 void PrintLockContention(const char* pszName, const char* pszFile, int nLine);
@@ -81,8 +128,8 @@ private:
             LeaveCritical();
         return lock.owns_lock();
     }
-
 public:
+
     CMutexLock(Mutex& mutexIn, const char* pszName, const char* pszFile, int nLine, bool fTry = false) : lock(mutexIn, boost::defer_lock)
     {
         if (fTry)
@@ -100,6 +147,11 @@ public:
     operator bool()
     {
         return lock.owns_lock();
+    }
+
+    boost::unique_lock<Mutex> &GetLock()
+    {
+        return lock;
     }
 };
 
