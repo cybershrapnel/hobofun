@@ -48,7 +48,7 @@
          <item>
           <widget class="QValidatedLineEdit" name="addressIn_SM">
            <property name="toolTip">
-            <string>The address to sign the message with (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</string>
+            <string>The address to sign the message with (e.g. 4Zo1ga6xuKuQ7JV7M9rGDoxdbYwV5zgQJ5)</string>
            </property>
            <property name="maxLength">
             <number>34</number>
@@ -117,7 +117,6 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2_SM">
          <property name="spacing">
-          <number>0</number>
          </property>
          <item>
           <widget class="QLineEdit" name="signatureOut_SM">
@@ -155,10 +154,10 @@
          <item>
           <widget class="QPushButton" name="signMessageButton_SM">
            <property name="toolTip">
-            <string>Sign the message to prove you own this Funcoin address</string>
+            <string>Sign the message to prove you own this HoboNickels address</string>
            </property>
            <property name="text">
-            <string>Sign &amp;Message</string>
+            <string>&amp;Sign Message</string>
            </property>
            <property name="icon">
             <iconset resource="../bitcoin.qrc">
@@ -261,7 +260,7 @@
          <item>
           <widget class="QValidatedLineEdit" name="addressIn_VM">
            <property name="toolTip">
-            <string>The address the message was signed with (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)</string>
+            <string>The address the message was signed with (e.g. 4Zo1ga6xuKuQ7JV7M9rGDoxdbYwV5zgQJ5)</string>
            </property>
            <property name="maxLength">
             <number>34</number>
@@ -301,10 +300,10 @@
          <item>
           <widget class="QPushButton" name="verifyMessageButton_VM">
            <property name="toolTip">
-            <string>Verify the message to ensure it was signed with the specified Funcoin address</string>
+            <string>Verify the message to ensure it was signed with the specified HoboNickels address</string>
            </property>
            <property name="text">
-            <string>Verify &amp;Message</string>
+            <string>&amp;Verify Message</string>
            </property>
            <property name="icon">
             <iconset resource="../bitcoin.qrc">
